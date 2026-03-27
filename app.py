@@ -1,66 +1,57 @@
 import streamlit as st
 import google.generativeai as genai
 
-# 1. SƏHİFƏ DİZAYNI VƏ AYARLARI
-st.set_page_config(page_title="A-ZEKA Ultra", page_icon="🤖", layout="wide")
+# 1. SƏHİFƏ AYARLARI
+st.set_page_config(page_title="A-ZEKA Ultra Fast", page_icon="⚡")
 
-# Xüsusi Görünüş (Daha müasir dizayn)
-st.markdown("""
-<style>
-    .stChatInput {border-radius: 20px !important;}
-    .stChatMessage {border-radius: 15px; margin-bottom: 10px;}
-</style>
-""", unsafe_allow_html=True)
-
-# 2. YENİ API AÇARININ QOŞULMASI
+# 2. API QOŞULMASI
 API_KEY = "AIzaSyByvxHEQfOmuejATOX7JVAXp2gTB27bWdU"
 genai.configure(api_key=API_KEY)
 
-# 3. MODELİN TƏYİNİ (Ən son Gemini 3 Flash modeli)
-# Bu model Google AI Studio-da gördüyün ən yeni mühərrikdir
-try:
-    model = genai.GenerativeModel(
-        model_name="gemini-3-flash-preview",
-        system_instruction="Sən A-ZEKA-san. Dünyanın ən mürəkkəb suallarına dəqiq, məntiqli və professional cavablar verən üstün bir intellektsən."
-    )
-except Exception as e:
-    # Əgər 3-Flash hələ aktiv deyilsə, ehtiyat olaraq 1.5-flash-a keçir
-    model = genai.GenerativeModel("gemini-1.5-flash")
+# 3. MODEL AYARLARI (Sürət üçün optimizasiya edilib)
+generation_config = {
+  "temperature": 0.5, # Daha sürətli və dəqiq cavab üçün
+  "top_p": 0.9,
+  "top_k": 32,
+  "max_output_tokens": 2048,
+}
 
-# 4. YADDAŞ (Söhbəti xatırlamaq üçün)
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+# Ən sürətli stabil model: gemini-1.5-flash
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config
+)
+
+# 4. YADDAŞ
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 # --- İNTERFEYS ---
-st.title("🚀 A-ZEKA Ultra Pro")
-st.subheader("Güclü, Dəqiq və Sürətli")
+st.title("⚡ A-ZEKA Sürətli Versiya")
 
-# Yan Menyu
-with st.sidebar:
-    st.header("⚙️ Ayarlar")
-    if st.button("🗑️ Tarixçəni Sil", use_container_width=True):
-        st.session_state.chat_history = []
-        st.rerun()
-    st.info("Bu sistem ən son Gemini 3 texnologiyası ilə təchiz olunub.")
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-# Mesajları Ekranda Göstər
-for msg in st.session_state.chat_history:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-# Sual Daxil Etmə Sahəsi
-if prompt := st.chat_input("Mürəkkəb sualınızı bura yazın..."):
-    # İstifadəçi mesajını göstər
+if prompt := st.chat_input("Sualınızı bura yazın..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
-    st.session_state.chat_history.append({"role": "user", "content": prompt})
 
-    # Cavab Alma
     with st.chat_message("assistant"):
-        with st.spinner("A-ZEKA təhlil edir..."):
-            try:
-                response = model.generate_content(prompt)
-                st.markdown(response.text)
-                st.session_state.chat_history.append({"role": "assistant", "content": response.text})
-            except Exception as e:
-                st.error(f"Xəta baş verdi: {e}")
+        placeholder = st.empty() # Canlı yazı üçün yer açırıq
+        full_response = ""
+        
+        try:
+            # stream=True yazaraq cavabı hissə-hissə alırıq (Çox sürətli görünür)
+            response = model.generate_content(prompt, stream=True)
+            
+            for chunk in response:
+                full_response += chunk.text
+                placeholder.markdown(full_response + "▌") # Yazılma effekti
+            
+            placeholder.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            
+        except Exception as e:
+            st.error(f"Xəta: {e}")
