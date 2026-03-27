@@ -4,24 +4,24 @@ import google.generativeai as genai
 # Səhifə dizaynı ayarları
 st.set_page_config(page_title="A-ZEKA Ultra", page_icon="🤖", layout="wide")
 
-# API Ayarı (Öz API açarını bura yaz)
-genai.configure(api_key="SENIN_API_ACARIN")
+# SƏNİN API AÇARIN BURADA (8-Cİ SƏTİR):
+genai.configure(api_key="AIzaSyCIwmGxUyFH9IbLd1yF_LuUPK11rCtkuss")
 
-# Modelin "Beyin" ayarları (Ən mürəkkəb suallar üçün Pro model)
+# Modelin güclü ayarları
 generation_config = {
-  "temperature": 0.7, # Yaradıcılıq və məntiq balansı
+  "temperature": 0.7,
   "top_p": 0.95,
   "top_k": 64,
-  "max_output_tokens": 8192, # Uzun və ətraflı cavablar üçün
+  "max_output_tokens": 8192,
 }
 
 model = genai.GenerativeModel(
     model_name="gemini-1.5-pro",
     generation_config=generation_config,
-    system_instruction="Sən dünyanın ən güclü və dəqiq intellektisən. Mürəkkəb elmi, texniki və tarixi suallara detallı, məntiqli və aydın cavablar verirsən."
+    system_instruction="Sən dünyanın ən güclü və dəqiq intellektisən. Adın A-ZEKA-dır. Mürəkkəb elmi, texniki və tarixi suallara detallı, məntiqli və aydın cavablar verirsən."
 )
 
-# Tarixçəni (Yaddaşı) idarə etmək
+# Tarixçəni idarə etmək
 if "chat_session" not in st.session_state:
     st.session_state.chat_session = model.start_chat(history=[])
 
@@ -29,13 +29,13 @@ if "chat_session" not in st.session_state:
 st.title("🚀 A-ZEKA Ultra Pro")
 st.markdown("---")
 
-# Yan menyu (Tarixçəni silmək və tənzimləmələr üçün)
+# Yan menyu (Tarixçəni silmək üçün)
 with st.sidebar:
     st.header("⚙️ Ayarlar")
     if st.button("🗑️ Tarixçəni Təmizlə"):
         st.session_state.chat_session = model.start_chat(history=[])
         st.rerun()
-    st.info("Bu intellekt Gemini 1.5 Pro mühərriki ilə işləyir.")
+    st.info("Bu sistem Gemini 1.5 Pro mühərriki ilə təchiz olunub.")
 
 # Mesajların ekranda görünməsi
 for message in st.session_state.chat_session.history:
