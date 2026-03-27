@@ -2,10 +2,9 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 
-# --- 1. SƏHİFƏ VƏ DİZAYN AYARLARI ---
+# --- 1. SƏHİFƏ VƏ DİZAYN ---
 st.set_page_config(page_title="A-ZEKA | Süni İntellekt", page_icon="⚡", layout="wide")
 
-# Xüsusi CSS dizaynı (Koda peşəkar görünüş qatır)
 st.markdown("""
 <style>
     .stChatMessage {border-radius: 10px; padding: 15px; margin-bottom: 10px;}
@@ -17,77 +16,83 @@ st.markdown("""
 API_KEY = "AIzaSyCIwmGxUyFH9IbLd1yF_LuUPK11rCtkuss"
 genai.configure(api_key=API_KEY)
 
-# A-ZEKA-nın Şəxsiyyəti və Təlimatları (LaTeX və riyaziyyat dəstəyi ilə)
+# --- 3. AVTOMATİK MODEL SEÇİCİ (404 Xətasının Həlli) ---
+@st.cache_resource
+def get_best_model():
+    try:
+        # Sənin açarının icazəsi olan bütün modelləri tapırıq
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        
+        # Əgər siyahıda 1.5-flash varsa onu, yoxdursa pro versiyanı, heç biri yoxdursa icazə verilən ilk modeli seç
+        if "models/gemini-1.5-flash" in available_models:
+            return "models/gemini-1.5-flash"
+        elif "models/gemini-pro" in available_models:
+            return "models/gemini-pro"
+        elif "gemini-1.5-flash" in available_models:
+            return "gemini-1.5-flash"
+        else:
+            return available_models[0] # Nəyə icazə varsa onu məcbur seç
+    except Exception:
+        return "gemini-pro" # Ən son ehtiyat variant
+
+# Təlimatlar
 sys_instruct = """
 Sən A-ZEKA adlı çox inkişaf etmiş, xüsusi bir süni intellektsən. 
 Əsas vəzifən istifadəçiyə ən mürəkkəb elmi, texniki, proqramlaşdırma və riyazi suallarda kömək etməkdir.
-Riyazi düsturları və tənlikləri həmişə LaTeX formatında yaz ki, ekranda vizual olaraq qüsursuz görünsün.
-Eyni zamanda göndərilən şəkilləri detallı analiz edə bilirsən. Qısa, dəqiq və professional cavablar ver.
+Riyazi düsturları həmişə LaTeX formatında yaz. Qısa, dəqiq və professional cavablar ver.
 """
 
-# Modeli seçirik (Həm mətn, həm şəkil üçün ən ideal olan gemini-1.5-flash-dır, xəta verməməsi üçün try-except qurduq)
+# Modeli işə salırıq
 try:
+    secilen_model_adi = get_best_model()
     model = genai.GenerativeModel(
-        model_name="models/gemini-1.5-flash", 
+        model_name=secilen_model_adi, 
         system_instruction=sys_instruct
     )
 except Exception as e:
-    st.error(f"Model yüklənmədi. Səbəb: {e}")
+    st.error(f"Sistem xətası: {e}")
 
-# --- 3. YADDAŞ (TARİXÇƏ) İDARƏETMƏSİ ---
+# --- 4. YADDAŞ ---
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# --- 4. YAN MENYU (SIDEBAR) VƏ AYARLAR ---
+# --- 5. YAN MENYU ---
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Google_Gemini_logo.svg/512px-Google_Gemini_logo.svg.png", width=100)
-    st.title("⚙️ A-ZEKA İdarə Paneli")
-    st.markdown("Dünyanın ən güclü AI mühərriklərindən biri ilə təchiz edilib.")
-    
+    st.title("⚙️ A-ZEKA Paneli")
+    st.success(f"İstifadə olunan mühərrik: {secilen_model_adi}") # Ekranda hansı modelin işlədiyini göstərəcək
     st.divider()
     
-    # Tarixçəni silmək düyməsi
     if st.button("🗑️ Bütün Söhbəti Sil", use_container_width=True):
         st.session_state.chat_history = []
-        st.success("Tarixçə təmizləndi!")
         st.rerun()
         
     st.divider()
-    
-    # Şəkil yükləmək üçün funksiya (Multimodal dəstək)
     st.markdown("### 📷 Şəkil Analizi")
     uploaded_file = st.file_uploader("Sualınla bağlı şəkil yüklə", type=["png", "jpg", "jpeg"])
 
-# --- 5. ƏSAS EKRAN VƏ SÖHBƏT İNTERFEYSİ ---
+# --- 6. ƏSAS EKRAN ---
 st.title("⚡ A-ZEKA - Universal İntellekt")
-st.caption("Riyaziyyat, Kodlaşdırma, Şəkil Analizi və daha nələr...")
 
-# Yaddaşdakı əvvəlki mesajları ekrana çıxarırıq
 for msg in st.session_state.chat_history:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# --- 6. SUAL GÖNDƏRMƏ VƏ CAVAB ALMA ---
 if user_input := st.chat_input("Sualınızı və ya tapşırığınızı daxil edin..."):
-    
-    # İstifadəçinin mesajını ekrana yaz və yaddaşa sal
     st.chat_message("user").markdown(user_input)
     st.session_state.chat_history.append({"role": "user", "content": user_input})
     
     with st.chat_message("assistant"):
-        with st.spinner("A-ZEKA məlumatları işləyir..."):
+        with st.spinner("A-ZEKA düşünür..."):
             try:
-                # Əgər istifadəçi şəkil yükləyibsə, həm şəkil, həm də mətni göndəririk
                 if uploaded_file is not None:
                     img = Image.open(uploaded_file)
                     response = model.generate_content([user_input, img])
-                # Yalnız mətn varsa
                 else:
                     response = model.generate_content(user_input)
                 
-                # Cavabı ekrana yaz və yaddaşa sal
                 st.markdown(response.text)
                 st.session_state.chat_history.append({"role": "assistant", "content": response.text})
                 
             except Exception as e:
-                st.error(f"Sistem Xətası: {e}\nZəhmət olmasa biraz sonra təkrar yoxlayın və ya API açarını yoxlayın.")
+                st.error(f"Sistem Xətası: {e}")
