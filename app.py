@@ -1,62 +1,54 @@
 import streamlit as st
 import google.generativeai as genai
-from PIL import Image
 
 # 1. SƏHİFƏ AYARLARI
-st.set_page_config(page_title="A-ZEKA Pro", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="A-ZEKA Ultra", page_icon="🤖")
 
-# 2. API TƏNZİMLƏMƏLƏRİ
-# Bu səfər heç bir əlavə parametr qoymadan ən sadə yolla qoşuluruq
-API_KEY = "AIzaSyCIwmGxUyFH9IbLd1yF_LuUPK11rCtkuss"
+# 2. API QOŞULMASI
+# BURAYA YENİ ALDIĞIN API AÇARINI YAPIŞDIR
+API_KEY = "YENİ_ALDIĞIN_ACARI_BURA_YAZ" 
 genai.configure(api_key=API_KEY)
 
-# 3. MODELİN TƏYİNİ (Xətasız Versiya)
-# Burada models/ ön şəkilçisini sildik ki, 404 verməsin
-try:
-    model = genai.GenerativeModel('gemini-pro')
-except Exception as e:
-    st.error(f"Model qoşulma xətası: {e}")
+# 3. MODEL AYARLARI (Ən sürətli və stabil versiya)
+@st.cache_resource
+def load_model():
+    return genai.GenerativeModel('gemini-1.5-flash')
 
-# 4. YADDAŞ
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+model = load_model()
 
-# --- 5. DİZAYN VƏ İNTERFEYS ---
-with st.sidebar:
-    st.title("⚙️ A-ZEKA Ayarları")
-    if st.button("🗑️ Tarixçəni Sil", use_container_width=True):
-        st.session_state.chat_history = []
-        st.rerun()
-    st.divider()
-    uploaded_file = st.file_uploader("Şəkil analizi (Könüllü)", type=["png", "jpg", "jpeg"])
+# 4. YADDAŞ (Söhbət Tarixçəsi)
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-st.title("⚡ A-ZEKA Ultra")
-st.caption("Dünyanın ən mürəkkəb sualları üçün hazırlanmış stabil versiya.")
+# --- İNTERFEYS ---
+st.title("🚀 A-ZEKA Ultra")
+st.markdown("---")
 
-# Mesajları göstər
-for msg in st.session_state.chat_history:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+# Tarixçəni göstər
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-# Sual daxil etmə
-if user_input := st.chat_input("Sualınızı yazın..."):
-    st.chat_message("user").markdown(user_input)
-    st.session_state.chat_history.append({"role": "user", "content": user_input})
-    
+# Sual daxil etmə (STREAMING DESTEKLİ)
+if prompt := st.chat_input("Mənə sual ver..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
     with st.chat_message("assistant"):
-        with st.spinner("A-ZEKA cavab verir..."):
-            try:
-                # Şəkil varsa başqa, yoxdursa başqa model (Vision dəstəyi üçün)
-                if uploaded_file:
-                    vision_model = genai.GenerativeModel('gemini-pro-vision')
-                    img = Image.open(uploaded_file)
-                    response = vision_model.generate_content([user_input, img])
-                else:
-                    response = model.generate_content(user_input)
-                
-                st.markdown(response.text)
-                st.session_state.chat_history.append({"role": "assistant", "content": response.text})
-                
-            except Exception as e:
-                st.error(f"Bağlantı xətası: {e}")
-                st.info("Məsləhət: API açarının aktivləşməsi üçün 5 dəqiqə gözləyib səhifəni yeniləyin.")
+        placeholder = st.empty()
+        full_response = ""
+        
+        try:
+            # stream=True sayəsində cavab dərhal yazılmağa başlayır
+            response = model.generate_content(prompt, stream=True)
+            for chunk in response:
+                full_response += chunk.text
+                placeholder.markdown(full_response + "▌")
+            
+            placeholder.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            
+        except Exception as e:
+            st.error(f"Xəta: {e}")
+            st.info("Əgər 'Expired' xətası alırsansa, Google AI Studio-dan yeni açar alıb koda yapışdır.")
