@@ -2,133 +2,198 @@ import streamlit as st
 import google.generativeai as genai
 import time
 import requests
+import json
+import random
+import os
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageFilter
+from datetime import datetime
 
-# ==========================================
-# 1. ULTRA FUTURİSTİK NEON DİZAYN (CSS)
-# ==========================================
-st.set_page_config(page_title="A-ZEKA Genesis", page_icon="💠", layout="wide")
+# ==============================================================================
+# SİSTEMİN NÜVƏSİ - A-ZEKA OS v4.0 (ULTRA EXPANDED EDITION)
+# ==============================================================================
 
+# 1. GLOBAL KONFİQURASİYA VƏ VİZUAL MATRİS
+st.set_page_config(
+    page_title="A-ZEKA INFINITY OS",
+    page_icon="💠",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# 2. CYBER-CORE UI (MİNİMALİST VƏ GÜCLÜ CSS)
 st.markdown("""
 <style>
-    /* Ana Fon və Cyberpunk rəngləri */
-    .stApp {
-        background: radial-gradient(circle, #0d1117 0%, #010409 100%);
-        color: #e6edf3;
-    }
-    /* Çat qutularının dizaynı */
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500&display=swap');
+    
+    body { font-family: 'Fira Code', monospace; }
+    .stApp { background: #050505; color: #00ff41; }
+    
+    /* Terminal Tərzli Mesajlar */
     .stChatMessage {
-        border: 1px solid #30363d;
-        border-radius: 20px !important;
-        background: rgba(22, 27, 34, 0.8) !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        border: 1px solid #00ff41;
+        background: rgba(0, 50, 0, 0.1) !important;
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+        border-radius: 5px !important;
+        animation: glow 2s infinite alternate;
     }
-    /* Neon effektli giriş sahəsi */
-    .stChatInput {
-        border-radius: 30px !important;
-        border: 1px solid #58a6ff !important;
-        box-shadow: 0 0 10px #58a6ff;
+    
+    @keyframes glow {
+        from { box-shadow: 0 0 5px #00ff41; }
+        to { box-shadow: 0 0 20px #00ff41; }
     }
-    /* Başlıq stili */
-    h1 {
-        color: #58a6ff;
-        text-shadow: 0 0 20px #58a6ff;
-        font-family: 'Courier New', Courier, monospace;
+
+    /* Neon Düymələr */
+    .stButton>button {
+        width: 100%;
+        background: transparent;
+        color: #00ff41;
+        border: 1px solid #00ff41;
+        transition: 0.3s;
+    }
+    .stButton>button:hover {
+        background: #00ff41;
+        color: black;
+        box-shadow: 0 0 30px #00ff41;
+    }
+    
+    /* Yan menyu stili */
+    [data-testid="stSidebar"] {
+        background-color: #0a0a0a;
+        border-right: 1px solid #00ff41;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ==========================================
-# 2. API VƏ MODELİN QURULMASI
-# ==========================================
-# Sənin aldığın yeni açarı bura yapışdır:
+# ==============================================================================
+# 3. İNTELLEKTUAL MOTOR (GEMINI CORE)
+# ==============================================================================
 API_KEY = "AIzaSyByvxHEQfOmuejATOX7JVAXp2gTB27bWdU"
 genai.configure(api_key=API_KEY)
 
-# A-ZEKA-nın Beyin Təlimatı
-sys_instruct = """
-Sən A-ZEKA-san. Dünyanın ən inkişaf etmiş AI sistemisən.
-1. Əgər istifadəçi "şəkil çək", "şəkil yarat" kimi əmrlər versə, cavabının əvvəlinə mütləq '[DRAW]' sözünü yaz.
-2. Cavablarında həmişə professional və haker stilində danış.
-3. Riyazi düsturları LaTeX formatında yaz.
-"""
+def initialize_ai():
+    instruction = (
+        "Sən A-ZEKA-san. ChatGPT-dən daha sürətli, daha dərin və daha texnikisən. "
+        "Sən sadəcə bir bot deyil, Abdullah Mikayılov tərəfindən idarə olunan gələcəyin proyektisən. "
+        "Cavablarında mürəkkəb terminlərdən qaçma, riyazi düsturları mütləq LaTeX ilə göstər."
+    )
+    return genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        system_instruction=instruction
+    )
 
-model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    system_instruction=sys_instruct
-)
+model = initialize_ai()
 
-# ==========================================
-# 3. ŞƏKİL YARATMA MÜHƏRRİKİ (IMAGE GEN)
-# ==========================================
-def generate_ai_image(prompt):
-    """Pulsuz və sürətli şəkil yaratma mühərriki (Pollinations/Unsplash AI)"""
+# ==============================================================================
+# 4. MULTİ-FONKSİONAL MODULLAR (GENİŞLƏNDİRİLMİŞ)
+# ==============================================================================
+
+# MODUL A: Şəkil Yaratma (Neural Canvas)
+def draw_vision(prompt):
     try:
-        # Şəkli yaratmaq üçün sorğu
-        image_url = f"https://pollinations.ai/p/{prompt.replace(' ', '_')}?width=1024&height=1024&seed=42"
-        response = requests.get(image_url)
+        url = f"https://pollinations.ai/p/{prompt.replace(' ', '_')}?width=1080&height=1080&nologo=true"
+        response = requests.get(url, timeout=15)
         return Image.open(BytesIO(response.content))
-    except:
-        return None
+    except Exception as e:
+        return f"Şəkil mühərriki xətası: {e}"
 
-# ==========================================
-# 4. YADDAŞ VƏ İNTERFEYS
-# ==========================================
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+# MODUL B: Şəkil Effekti Verici
+def apply_matrix_effect(img):
+    return img.filter(ImageFilter.EDGE_ENHANCE_MORE).convert('L')
 
-st.title("💠 A-ZEKA GENESIS")
-st.caption("Status: System Online | Neural Link: Stable")
+# MODUL C: Sistem Loglama Sistemi
+def log_action(action):
+    now = datetime.now().strftime("%H:%M:%S")
+    return f"[{now}] SYS_LOG: {action} ... SUCCESS"
 
-# Yan Menyu (Sidebar)
+# ==============================================================================
+# 5. İNTERFEYSİN QURULMASI (UX)
+# ==============================================================================
+
+# Yan Panel (Control Terminal)
 with st.sidebar:
-    st.header("⚙️ Sistem Ayarları")
-    if st.button("🗑️ Terminalı Sıfırla"):
-        st.session_state.chat_history = []
-        st.rerun()
+    st.title("📟 CONTROL UNIT")
+    st.write(log_action("Neural Link Established"))
+    st.write(log_action("Encryption: AES-256"))
+    
     st.divider()
-    st.info("A-ZEKA həm danışır, həm də şəkil yaradır.")
+    
+    mode = st.radio("Sistem Rejimi:", ["Standart", "Haker Mode", "Elmi Analiz"])
+    
+    st.divider()
+    
+    st.subheader("🛠️ Alətlər")
+    img_tool = st.checkbox("Şəkil Effekti Aktiv Et")
+    clear_chat = st.button("🔴 SİSTEMİ SIFIRLA")
+    
+    if clear_chat:
+        st.session_state.messages = []
+        st.rerun()
 
-# Tarixçəni göstər
-for msg in st.session_state.chat_history:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-        if "image" in msg:
-            st.image(msg["image"])
+# Əsas Ekran
+st.title("💠 A-ZEKA INFINITY OS")
+st.write(f"Vəziyyət: **{mode}** | İstehsalçı: **Abdullah Mikayılov**")
 
-# ==========================================
-# 5. ƏMRLƏRİN İCRA EDİLMƏSİ
-# ==========================================
-if prompt := st.chat_input("Komanda daxil edin..."):
-    # İstifadəçinin mesajı
-    st.session_state.chat_history.append({"role": "user", "content": prompt})
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Tarixçəni ekrana çıxar
+for m in st.session_state.messages:
+    with st.chat_message(m["role"]):
+        st.markdown(m["content"])
+        if "img" in m:
+            st.image(m["img"])
+
+# ==============================================================================
+# 6. KOMANDA İCRA MƏRKƏZİ
+# ==============================================================================
+
+if prompt := st.chat_input("Sistem əmri gözlənilir..."):
+    # İstifadəçi mesajı
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # A-ZEKA-nın cavabı
+    # Süni İntellektin Reaksiyası
     with st.chat_message("assistant"):
-        with st.spinner("Analiz edilir..."):
-            try:
-                response = model.generate_content(prompt)
-                full_text = response.text
+        placeholder = st.empty()
+        full_text = ""
+        
+        try:
+            # 1. Sürətli Düşünmə Animasiyası
+            with st.status("Verilənlər bazası skan edilir...", expanded=False):
+                st.write("Paketlər göndərilir...")
+                time.sleep(0.3)
+                st.write("API cavabı təhlil olunur...")
+                time.sleep(0.3)
+
+            # 2. Şəkil yoxsa Mətn?
+            if any(word in prompt.lower() for word in ["şəkil", "çək", "rəsm", "draw", "image"]):
+                st.write("🎨 **Neural Canvas işə düşür...**")
+                img_result = draw_vision(prompt)
                 
-                # ŞƏKİL ÇƏKMƏ ŞƏRTİ YOXLA
-                if "[DRAW]" in full_text.upper() or "şəkil" in prompt.lower():
-                    st.write("🎨 Şəkil generatsiya olunur...")
-                    generated_img = generate_ai_image(prompt)
-                    if generated_img:
-                        st.image(generated_img, caption="A-ZEKA tərəfindən yaradıldı")
-                        st.session_state.chat_history.append({
-                            "role": "assistant", 
-                            "content": full_text.replace("[DRAW]", ""), 
-                            "image": generated_img
-                        })
-                    else:
-                        st.error("Şəkil mühərrikində xəta!")
+                if isinstance(img_result, Image.Image):
+                    if img_tool:
+                        img_result = apply_matrix_effect(img_result)
+                    
+                    st.image(img_result, caption="A-ZEKA tərəfindən sintez edildi")
+                    full_text = f"Sizin üçün '{prompt}' mövzusunda vizualizasiya hazırladım."
+                    st.session_state.messages.append({"role": "assistant", "content": full_text, "img": img_result})
                 else:
-                    st.markdown(full_text)
-                    st.session_state.chat_history.append({"role": "assistant", "content": full_text})
-            
-            except Exception as e:
-                st.error(f"Sistem xətası: {e}")
+                    st.error(img_result)
+            else:
+                # Normal Yazışma (Streaming)
+                response = model.generate_content(prompt, stream=True)
+                for chunk in response:
+                    full_text += chunk.text
+                    placeholder.markdown(full_text + "█")
+                
+                placeholder.markdown(full_text)
+                st.session_state.messages.append({"role": "assistant", "content": full_text})
+
+        except Exception as e:
+            st.error(f"FATAL ERROR: {str(e)}")
+            st.warning("İpucu: API-nin limitini və ya interneti yoxlayın.")
+
+# Footer Log
+st.caption(f"A-ZEKA LOG: Last Sync {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
