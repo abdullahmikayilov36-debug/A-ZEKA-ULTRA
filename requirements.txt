@@ -1,5 +1,2 @@
-streamlit
-google-generativeai
-Pillow
-requests
-pandas
+import streamlit as st
+import random
