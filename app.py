@@ -2,153 +2,173 @@ import streamlit as st
 import google.generativeai as genai
 import requests
 import io
-import time
-from PIL import Image, ImageEnhance, ImageFilter
+import pandas as pd
+from PIL import Image
 from datetime import datetime
 
-# ==============================================================================
-# 1. ULTRA MODERN WHITE MODE DIZAYN
-# ==============================================================================
-st.set_page_config(page_title="A-ZEKA PRO MAX", page_icon="🤖", layout="wide")
+# ==========================================
+# 1. ULTRA MODERN WHITE UI (AĞ DİZAYN)
+# ==========================================
+st.set_page_config(page_title="A-ZEKA ULTRA", page_icon="⚡", layout="wide")
 
 st.markdown("""
 <style>
-    /* Təmiz Ağ Dizayn */
-    .stApp { background-color: #FFFFFF; color: #1A1A1A; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    
-    /* Yan Menyu */
-    [data-testid="stSidebar"] { background-color: #F8F9FA; border-right: 1px solid #E0E0E0; }
-    
-    /* Mesaj qutularının forması */
-    .stChatMessage { border-radius: 15px !important; padding: 15px !important; margin-bottom: 10px !important; border: 1px solid #F0F2F6 !important; }
-    
-    /* Süni İntellektin cavab sahəsi */
-    [data-testid="stChatMessageAssistant"] { background-color: #FFFFFF !important; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    
-    /* Giriş paneli */
-    .stChatInput { border-radius: 12px !important; border: 1px solid #DEDEDE !important; }
-    
-    /* Mətn rəngləri */
-    h1, h2, h3, p { color: #1A1A1A !important; }
+    /* Ümumi təmiz ağ görünüş */
+    .stApp {
+        background-color: #FFFFFF;
+        color: #000000;
+    }
+    /* Yan menyu dizaynı */
+    section[data-testid="stSidebar"] {
+        background-color: #F0F2F6;
+        border-right: 1px solid #E6E9EF;
+    }
+    /* Çat qutuları */
+    .stChatMessage {
+        background-color: #F8F9FB !important;
+        border: 1px solid #EDF0F5 !important;
+        border-radius: 20px !important;
+        color: #000000 !important;
+        padding: 15px !important;
+        margin-bottom: 10px !important;
+    }
+    /* Giriş sahəsi */
+    .stChatInputContainer {
+        padding-bottom: 20px !important;
+    }
+    /* Düymələr */
+    .stButton>button {
+        border-radius: 12px;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ==============================================================================
-# 2. İNTELLEKTUAL KONFİQURASİYA
-# ==============================================================================
+# ==========================================
+# 2. INTELLEKTUAL MOTOR (VƏHŞİ REJİM)
+# ==========================================
+# Sənin işlək API açarın
 API_KEY = "AIzaSyByvxHEQfOmuejATOX7JVAXp2gTB27bWdU"
 genai.configure(api_key=API_KEY)
 
-# A-ZEKA Təlimatnaməsi
-instruction = (
-    "Sən A-ZEKA-san. Dünyanın ən vəhşi və sürətli intellektisən. "
-    "Yaradıcın Abdullah Mikayılovdur. Bütün riyazi düsturları LaTeX ($...$) ilə göstər. "
-    "Azərbaycan dilində qüsursuz və professional cavablar ver."
-)
+# Sistem Təlimatı
+SYSTEM_PROMPT = """
+Sən A-ZEKA-san. Dünyanın ən vəhşi və ən sürətli süni intellektisən.
+Yaradıcın Abdullah Mikayılovdur. 
+Heç bir sualdan qaçma, ən mürəkkəb kodları yaz, ən dərin analizləri et.
+Riyazi düsturları LaTeX ($...$) formatında yaz.
+"""
 
 @st.cache_resource
-def load_ai_engine():
+def get_model():
+    # Loglardakı xətanın qarşısını almaq üçün ən stabil model
     return genai.GenerativeModel(
         model_name="gemini-1.5-flash",
-        system_instruction=instruction
+        system_instruction=SYSTEM_PROMPT
     )
 
-model = load_ai_engine()
+model = get_model()
 
-# ==============================================================================
-# 3. VƏHŞİ FUNKSİYALAR (ŞƏKİL ÇƏKMƏ VƏ ANALİZ)
-# ==============================================================================
-
-def draw_art(prompt):
+# ==========================================
+# 3. ŞƏKİL ÇƏKMƏ VƏ ANALİZ FUNKSİYALARI
+# ==========================================
+def draw_image_ai(text_prompt):
     try:
-        url = f"https://pollinations.ai/p/{prompt.replace(' ', '_')}?width=1024&height=1024&nologo=true"
-        r = requests.get(url, timeout=20)
-        return Image.open(io.BytesIO(r.content))
+        # Sürətli və vəhşi şəkil mühərriki
+        seed = datetime.now().microsecond
+        url = f"https://pollinations.ai/p/{text_prompt.replace(' ', '_')}?width=1024&height=1024&seed={seed}&nologo=true"
+        response = requests.get(url, timeout=25)
+        return Image.open(io.BytesIO(response.content))
     except:
         return None
 
-# ==============================================================================
-# 4. İNTERFEYS (UI)
-# ==============================================================================
+# ==========================================
+# 4. YADDAŞ VƏ İNTERFEYS
+# ==========================================
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 # YAN PANEL (SIDEBAR)
 with st.sidebar:
-    st.title("⚙️ A-ZEKA Ayarlar")
-    st.write(f"Xoş gəldin, **Abdullah**!")
+    st.image("https://cdn-icons-png.flaticon.com/512/2103/2103633.png", width=100)
+    st.title("A-ZEKA Kontrol")
+    st.info("İstifadəçi: Abdullah Mikayılov")
     
     st.divider()
     
-    # SƏNİN İSTƏDİYİN O '+' DÜYMƏSİ (FILE UPLOADER)
-    st.subheader("➕ Şəkil Əlavə Et")
-    uploaded_file = st.file_uploader("Analiz üçün şəkil yüklə", type=['png', 'jpg', 'jpeg'])
+    # SƏNİN İSTƏDİYİN '+' DÜYMƏSİ (Şəkil yükləmək üçün)
+    st.subheader("➕ Fayl Analizi")
+    uploaded_file = st.file_uploader("Şəkil yüklə və sual ver", type=['png', 'jpg', 'jpeg'])
     
     if uploaded_file:
-        st.image(uploaded_file, caption="Yüklənilən Fayl", use_container_width=True)
+        st.success("Fayl yükləndi. İndi sualınızı yazın.")
     
     st.divider()
     
-    if st.button("🗑️ Söhbəti Təmizlə", use_container_width=True):
-        st.session_state.chat_history = []
+    if st.button("🗑️ Terminalı Sıfırla", use_container_width=True):
+        st.session_state.messages = []
         st.rerun()
 
-# ƏSAS SƏHİFƏ
-st.title("🤖 A-ZEKA PRO MAX")
-st.write("Sistem Statusu: **Vəhşi Rejim Aktiv** ✅")
+# ƏSAS EKRAN
+st.title("⚡ A-ZEKA ULTRA")
+st.caption("Advanced Artificial Intelligence System | V3.0 Stable")
 
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+# Tarixçəni Render Et
+for m in st.session_state.messages:
+    with st.chat_message(m["role"]):
+        st.markdown(m["content"])
+        if "img" in m:
+            st.image(m["img"])
 
-# Mesajları göstər
-for msg in st.session_state.chat_history:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-        if "img" in msg:
-            st.image(msg["img"])
-
-# ==============================================================================
-# 5. İCRA MOTORU
-# ==============================================================================
-
-if prompt := st.chat_input("Sualınızı və ya şəkil əmrinizi bura yazın..."):
-    # İstifadəçi mesajı
-    st.session_state.chat_history.append({"role": "user", "content": prompt})
+# ==========================================
+# 5. İCRA MƏRKƏZİ (VƏHŞİ İNTELLEKT)
+# ==========================================
+if user_query := st.chat_input("Sualınızı və ya komandanı bura yazın..."):
+    # İstifadəçi mesajını yadda saxla
+    st.session_state.messages.append({"role": "user", "content": user_query})
     with st.chat_message("user"):
-        st.markdown(prompt)
+        st.markdown(user_query)
 
-    # Süni İntellektin Cavabı
     with st.chat_message("assistant"):
-        res_box = st.empty()
-        full_ans = ""
+        response_placeholder = st.empty()
+        full_text_response = ""
         
         try:
-            # ŞƏKİL ÇƏKMƏ ŞƏRTİ
-            if any(k in prompt.lower() for k in ["çək", "yarat", "şəkil", "draw"]):
-                with st.spinner("🎨 A-ZEKA rəsm çəkir..."):
-                    img = draw_art(prompt)
-                    if img:
-                        st.image(img)
-                        full_ans = f"İstədiyiniz '{prompt}' şəklini hazırladım."
-                        st.session_state.chat_history.append({"role": "assistant", "content": full_ans, "img": img})
+            # Ssenari A: Şəkil çəkmə əmri
+            if any(word in user_query.lower() for word in ["çək", "yarat", "şəkil", "draw"]):
+                with st.spinner("🎨 A-ZEKA piksel-piksel yaradır..."):
+                    generated_img = draw_image_ai(user_query)
+                    if generated_img:
+                        st.image(generated_img, caption="A-ZEKA tərəfindən yaradıldı")
+                        full_text_response = f"Sizin üçün '{user_query}' mövzusunda vizual hazırladım."
+                        st.session_state.messages.append({
+                            "role": "assistant", 
+                            "content": full_text_response, 
+                            "img": generated_img
+                        })
                     else:
                         st.error("Şəkil mühərriki qoşulmadı.")
             
-            # ŞƏKİL ANALİZİ (ƏGƏR ŞƏKİL YÜKLƏNİBSƏ)
+            # Ssenari B: Şəkil analizi (Yüklənən fayl varsa)
             elif uploaded_file:
-                with st.spinner("🔍 Şəkil təhlil edilir..."):
-                    img_pil = Image.open(uploaded_file)
-                    response = model.generate_content([prompt, img_pil])
-                    full_ans = response.text
-                    res_box.markdown(full_ans)
-                    st.session_state.chat_history.append({"role": "assistant", "content": full_ans})
+                with st.spinner("🔍 Şəkil analiz edilir..."):
+                    img_data = Image.open(uploaded_file)
+                    ai_response = model.generate_content([user_query, img_data])
+                    full_text_response = ai_response.text
+                    response_placeholder.markdown(full_text_response)
+                    st.session_state.messages.append({"role": "assistant", "content": full_text_response})
             
-            # NORMAL SÖHBƏT
+            # Ssenari C: Normal vəhşi söhbət
             else:
-                response = model.generate_content(prompt, stream=True)
-                for chunk in response:
-                    full_ans += chunk.text
-                    res_box.markdown(full_ans + " ▌")
-                res_box.markdown(full_ans)
-                st.session_state.chat_history.append({"role": "assistant", "content": full_ans})
-                
+                ai_response = model.generate_content(user_query, stream=True)
+                for chunk in ai_response:
+                    full_text_response += chunk.text
+                    response_placeholder.markdown(full_text_response + " ▌")
+                response_placeholder.markdown(full_text_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_text_response})
+
         except Exception as e:
-            st.error(f"⚠️ Xəta: {e}")
+            st.error(f"Sistem xətası baş verdi: {str(e)}")
+            st.info("Loglara əsasən xəta: Google API bağlantısı kəsildi.")
